@@ -18,5 +18,5 @@ func New() Deck {
 		}
 	}
 
-	return d
+	return Shuffle(d)
 }

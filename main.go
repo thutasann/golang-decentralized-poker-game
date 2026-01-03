@@ -7,6 +7,9 @@ import (
 )
 
 func main() {
-	d := deck.Shuffle(deck.New())
-	fmt.Println(d)
+	for i := 0; i < 10; i++ {
+		d := deck.New()
+		fmt.Println(d)
+		fmt.Println("-------")
+	}
 }
