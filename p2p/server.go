@@ -10,11 +10,6 @@ type ServerConfig struct {
 	ListenAddr string // listen address
 }
 
-// Peer struct
-type Peer struct {
-	conn net.Conn // peer connection
-}
-
 // Server struct
 type Server struct {
 	ServerConfig
@@ -46,7 +41,7 @@ func (s *Server) Start() {
 		panic(err)
 	}
 
-	fmt.Printf("game server running on port %s", s.ListenAddr)
+	fmt.Printf("game server running on port %s\n", s.ListenAddr)
 
 	// accept loop
 	s.acceptLoop()
@@ -65,14 +60,9 @@ func (s *Server) listen() error {
 
 // Loop the server
 func (s *Server) loop() {
-	for {
-		select {
-		case peer := <-s.addPeer:
-			s.peers[peer.conn.RemoteAddr()] = peer
-			fmt.Printf("New Player connected: %s", peer.conn.RemoteAddr())
-		default:
-			return
-		}
+	for peer := range s.addPeer {
+		s.peers[peer.conn.RemoteAddr()] = peer
+		fmt.Printf("New Player connected: %s\n", peer.conn.RemoteAddr())
 	}
 }
 
@@ -83,7 +73,16 @@ func (s *Server) acceptLoop() {
 		if err != nil {
 			panic(err)
 		}
-		s.handleConn(conn)
+
+		peer := &Peer{
+			conn: conn,
+		}
+
+		s.addPeer <- peer
+
+		peer.Send([]byte("GGPOKER V0.1-beta"))
+
+		go s.handleConn(conn)
 	}
 }
 
