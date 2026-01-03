@@ -2,6 +2,7 @@ package deck
 
 type Deck [52]Card
 
+// Initialize a new Deck
 func New() Deck {
 	var (
 		nSuits = 4
