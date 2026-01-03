@@ -1,7 +1,12 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/thuta/ggpoker/deck"
+)
 
 func main() {
-	fmt.Println("Golang Poker game")
+	d := deck.New()
+	fmt.Println(d)
 }

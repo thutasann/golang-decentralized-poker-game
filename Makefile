@@ -3,6 +3,7 @@ BUILD_DIR=build
 
 dev:
 	@echo "Running in development mode..."
+	clear
 	@go run main.go
 
 build:
