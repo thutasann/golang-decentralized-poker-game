@@ -1,7 +1,6 @@
 package p2p
 
 import (
-	"bytes"
 	"fmt"
 	"log"
 	"net"
@@ -46,9 +45,9 @@ func (s *Server) Start() {
 	go s.loop()
 
 	// listen
-	if err := s.listen(); err != nil {
-		panic(err)
-	}
+	// if err := s.listen(); err != nil {
+	// 	panic(err)
+	// }
 
 	fmt.Printf("game server running on port %s\n", s.ListenAddr)
 
@@ -93,17 +92,6 @@ func (s *Server) loop() {
 	}
 }
 
-// Listen the server
-func (s *Server) listen() error {
-	listen, err := net.Listen("tcp", s.ListenAddr)
-	if err != nil {
-		panic(err)
-	}
-
-	s.listener = listen
-	return nil
-}
-
 // Accept the Server Loop
 func (s *Server) acceptLoop() {
 	for {
@@ -122,24 +110,5 @@ func (s *Server) acceptLoop() {
 			log.Printf("failed to send handshake to peer: %v", err)
 		}
 
-		go s.handleConn(peer)
 	}
-}
-
-// Handle the Server Connection
-func (s *Server) handleConn(p *Peer) {
-	buf := make([]byte, 1024)
-	for {
-		n, err := p.conn.Read(buf)
-		if err != nil {
-			break
-		}
-
-		s.msgCh <- &Message{
-			From:    p.conn.RemoteAddr(),
-			Payload: bytes.NewReader(buf[:n]),
-		}
-	}
-
-	s.delPeer <- p
 }
