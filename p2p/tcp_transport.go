@@ -48,16 +48,14 @@ func (p *Peer) ReadLoop(msgch chan *Message) {
 type TCPTransport struct {
 	listenAddr string // listen address
 	listener   net.Listener
-	addPeer    chan *Peer
-	delPeer    chan *Peer
+	AddPeer    chan *Peer
+	DelPeer    chan *Peer
 }
 
 // Initialize a new TCP Transport
-func NewTCPTransport(addr string, addPeer, delPeer chan *Peer) *TCPTransport {
+func NewTCPTransport(addr string) *TCPTransport {
 	return &TCPTransport{
 		listenAddr: addr,
-		addPeer:    addPeer,
-		delPeer:    delPeer,
 	}
 }
 
@@ -81,7 +79,7 @@ func (t *TCPTransport) ListenAndAccept() error {
 			conn: conn,
 		}
 
-		t.addPeer <- peer
+		t.AddPeer <- peer
 	}
 
 }

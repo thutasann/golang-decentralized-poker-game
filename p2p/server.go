@@ -1,9 +1,9 @@
 package p2p
 
 import (
-	"fmt"
-	"log"
 	"net"
+
+	"github.com/sirupsen/logrus"
 )
 
 // Server Config struct
@@ -16,18 +16,17 @@ type ServerConfig struct {
 type Server struct {
 	ServerConfig
 
-	handler  Handler
-	listener net.Listener       // net listener
-	peers    map[net.Addr]*Peer // peers map
-	addPeer  chan *Peer         // add peer channel
-	delPeer  chan *Peer         // delete peer channel
-	msgCh    chan *Message      // message channel
-	// mu       sync.RWMutex       // mutex
+	handler   Handler
+	transport *TCPTransport
+	peers     map[net.Addr]*Peer // peers map
+	addPeer   chan *Peer         // add peer channel
+	delPeer   chan *Peer         // delete peer channel
+	msgCh     chan *Message      // message channel
 }
 
 // Initialize a new Server
 func NewServer(cfg ServerConfig) *Server {
-	return &Server{
+	s := &Server{
 		handler:      &DefaultHandler{},
 		ServerConfig: cfg,
 		peers:        make(map[net.Addr]*Peer),
@@ -35,24 +34,28 @@ func NewServer(cfg ServerConfig) *Server {
 		delPeer:      make(chan *Peer),
 		msgCh:        make(chan *Message),
 	}
+
+	tr := NewTCPTransport(s.ListenAddr)
+	s.transport = tr
+
+	tr.AddPeer = s.addPeer
+	tr.DelPeer = s.delPeer
+
+	return s
 }
 
 // Start the Server
 //
 // telnet localhost 3000
 func (s *Server) Start() {
-	// loop
 	go s.loop()
 
-	// listen
-	// if err := s.listen(); err != nil {
-	// 	panic(err)
-	// }
+	logrus.WithFields(logrus.Fields{
+		"port": s.ListenAddr,
+		"type": "go poker",
+	}).Info("started new game server")
 
-	fmt.Printf("game server running on port %s\n", s.ListenAddr)
-
-	// accept loop
-	s.acceptLoop()
+	s.transport.ListenAndAccept()
 }
 
 // Connect the Server
@@ -70,45 +73,4 @@ func (s *Server) Connect(addr string) error {
 	s.addPeer <- peer
 
 	return peer.Send([]byte(s.Version))
-}
-
-// Loop the server
-func (s *Server) loop() {
-	for {
-		select {
-		case peer := <-s.addPeer:
-			s.peers[peer.conn.RemoteAddr()] = peer
-			fmt.Printf("New Player connected: %s\n", peer.conn.RemoteAddr())
-
-		case peer := <-s.delPeer:
-			delete(s.peers, peer.conn.RemoteAddr())
-			fmt.Printf("player disconnected %s\n", peer.conn.RemoteAddr())
-
-		case msg := <-s.msgCh:
-			if err := s.handler.HandleMessage(msg); err != nil {
-				panic(err)
-			}
-		}
-	}
-}
-
-// Accept the Server Loop
-func (s *Server) acceptLoop() {
-	for {
-		conn, err := s.listener.Accept()
-		if err != nil {
-			panic(err)
-		}
-
-		peer := &Peer{
-			conn: conn,
-		}
-
-		s.addPeer <- peer
-
-		if err := peer.Send([]byte(s.Version)); err != nil {
-			log.Printf("failed to send handshake to peer: %v", err)
-		}
-
-	}
 }
