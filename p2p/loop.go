@@ -20,6 +20,15 @@ func (s *Server) loop() {
 			delete(s.peers, peer.conn.RemoteAddr())
 
 		case peer := <-s.addPeer:
+			// async handshake send
+			go func(p *Peer) {
+				if err := s.SendHandShake(p); err != nil {
+					logrus.WithError(err).
+						WithField("addr", p.conn.RemoteAddr()).
+						Warn("send handshake failed")
+				}
+			}(peer)
+
 			// Handshake
 			if err := s.handshake(peer); err != nil {
 				logrus.Info("handshake with incoming player failed: ", err)

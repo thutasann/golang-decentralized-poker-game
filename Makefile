@@ -6,7 +6,7 @@ dev:
 	clear
 	@go run main.go
 
-build:
+build: clean
 	@echo "Building production binary..."
 	@go build -o $(BUILD_DIR)/$(APP_NAME) main.go
 
